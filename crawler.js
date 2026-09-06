@@ -35,9 +35,21 @@ const STRIP_SELECTORS = "script, style, noscript, nav, footer, header, svg, form
 // ---- sitemap reading (plain fetch is fine here — sitemaps are static XML) --
 
 async function getSitemapUrls(sitemapUrl) {
-  const res = await fetch(sitemapUrl);
+  const res = await fetch(sitemapUrl, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    },
+  });
   const xml = await res.text();
-  const parsed = await xml2js.parseStringPromise(xml);
+  let parsed;
+  try {
+    parsed = await xml2js.parseStringPromise(xml);
+  } catch (err) {
+    console.error("Sitemap did not return valid XML. First 300 chars of response:");
+    console.error(xml.slice(0, 300));
+    throw err;
+  }
 
   if (parsed.sitemapindex) {
     const subSitemaps = parsed.sitemapindex.sitemap.map((s) => s.loc[0]);
@@ -95,10 +107,9 @@ async function run() {
     try {
       page = await browser.newPage();
       await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
-      // Small extra wait for any late-loading content (e.g. team cards, sector lists)
       await new Promise((r) => setTimeout(r, 800));
 
-      const html = await page.content(); // fully rendered HTML, after JS ran
+      const html = await page.content();
       const $ = cheerio.load(html);
       const { title, text } = extractPageText($);
       if (!text || text.length < 40) continue;
@@ -118,8 +129,6 @@ async function run() {
 
   await browser.close();
 
-  // Preserve any MongoDB ("source: mongodb") entries already in the index
-  // when re-running just the website crawl
   let existing = [];
   if (fs.existsSync(OUTPUT_FILE)) {
     existing = JSON.parse(fs.readFileSync(OUTPUT_FILE, "utf-8")).filter((i) => i.source !== "website");
