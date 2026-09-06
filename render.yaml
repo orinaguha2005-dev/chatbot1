@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm install
+    buildCommand: npm install && npx puppeteer browsers install chrome && node crawler.js
     startCommand: npm start
     envVars:
       - key: OPENAI_API_KEY
