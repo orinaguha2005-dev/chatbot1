@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: jhs-chatbot
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SITE_SITEMAP_URL
+        value: https://jhsassociates.in/sitemap.xml
+      - key: ALLOWED_ORIGIN
+        value: https://jhsassociates.in
+      - key: PORT
+        value: 3001
