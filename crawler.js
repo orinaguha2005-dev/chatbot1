@@ -1,23 +1,3 @@
-/**
- * crawler.js
- * ----------
- * Reads your website's sitemap.xml, visits every page using a real
- * headless browser (Puppeteer), extracts the meaningful text AFTER
- * JavaScript has rendered it, splits it into chunks, embeds each chunk
- * with OpenAI, and saves everything into index.json.
- *
- * WHY PUPPETEER (not a simple fetch): jhsassociates.in — like many modern
- * sites — loads its real content with JavaScript after the initial page
- * load. A plain fetch() only sees the empty "shell" HTML, not the actual
- * text. Puppeteer runs a real browser so it sees the page exactly like a
- * visitor would, then reads the finished result.
- *
- * Run manually:      node crawler.js
- * Run on a schedule:  a nightly cron job / GitHub Action / Render cron
- *                      job calling `node crawler.js` keeps index.json fresh
- *                      automatically — no manual editing required.
- */
-
 require("dotenv").config();
 const puppeteer = require("puppeteer");
 const cheerio = require("cheerio");
@@ -31,8 +11,6 @@ const SITEMAP_URL = process.env.SITE_SITEMAP_URL;
 const OUTPUT_FILE = "./index.json";
 
 const STRIP_SELECTORS = "script, style, noscript, nav, footer, header, svg, form";
-
-// ---- sitemap reading (plain fetch is fine here — sitemaps are static XML) --
 
 async function getSitemapUrls(sitemapUrl) {
   const res = await fetch(sitemapUrl, {
@@ -87,8 +65,6 @@ async function embed(text) {
   const res = await openai.embeddings.create({ model: "text-embedding-3-small", input: text });
   return res.data[0].embedding;
 }
-
-// ---- main crawl (Puppeteer visits each page like a real visitor) ----------
 
 async function run() {
   if (!SITEMAP_URL) throw new Error("Set SITE_SITEMAP_URL in .env");
